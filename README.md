@@ -40,7 +40,7 @@ Example:
 ```
 !register carrot random RealCarrotFacts
 +carrot
-!deregister
+!deregister carrot
 ```
 
 ## License
