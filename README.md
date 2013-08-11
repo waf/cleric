@@ -1,11 +1,16 @@
 # cleric
 
-IRC bot that can dynamically add modules based on twitter sources
+An IRC bot that can dynamically add modules based on twitter sources.
+
+## Configuration
+
+`resources/cleric.properties` is the main bot configuration file.
+
+As this bot interacts with Twitter, you'll need Twitter API credentials. 
+Register with [the Twitter API](https://dev.twitter.com/apps/new) and put the 
+provided credentials in `resources/twitter.properties`.
 
 ## Running
-
-If you want to run your own instance, register with [the Twitter API](https://dev.twitter.com/apps/new)
-to get API keys. Put these API keys in resources/twitter.properties.
 
 This bot is written in clojure and uses [leiningen](https://github.com/technomancy/leiningen). 
 To start the bot, install leiningen and run:
@@ -23,7 +28,7 @@ $ java -jar target/cleric-*-STANDALONE.jar
 
 ## Usage
 
-Edit core.clj to set bot information. Once the bot joins your channel, use
+Once the bot joins your channel, use
 
 ```
 !register <command> <mode> <twitter_username>
