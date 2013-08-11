@@ -1,6 +1,6 @@
 (defproject cleric "0.1.0-SNAPSHOT"
-  :description "FIXME: write description"
-  :url "http://example.com/FIXME"
+  :description "IRC bot that can dynamically add modules based on twitter sources"
+  :url "https://github.com/waf/cleric"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :main cleric.core
