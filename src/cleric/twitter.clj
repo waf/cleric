@@ -50,6 +50,12 @@
         "latest" (get-latest-tweet source)
         "random" (get-random-tweet source)))))
 
+(defn list-registered []
+  (let [commands (map #(join ":" (second %)) (seq @store/sources))
+        prefix (partial str "+")]
+  (join " " (map prefix commands))))
+
 (def register-plugin (plugin #"!register (\w+) (\w+) (\w+)" register))
 (def deregister-plugin (plugin #"!deregister (.+)" deregister))
+(def list-plugin (plugin #"!list" list-registered))
 (def run-plugin (plugin #"\+(\w+)" run))
