@@ -51,9 +51,9 @@
         "random" (get-random-tweet source)))))
 
 (defn list-registered []
-  (let [commands (map #(join ":" (second %)) (seq @store/sources))
-        prefix (partial str "+")]
-  (join " " (map prefix commands))))
+  (let [command-format (fn [cmd] (str "+" (first cmd) ":" (second (second cmd))))
+        commands (seq @store/sources)]
+  (join " " (map command-format commands))))
 
 (def register-plugin (plugin #"!register (\w+) (\w+) (\w+)" register))
 (def deregister-plugin (plugin #"!deregister (.+)" deregister))
