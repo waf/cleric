@@ -1,15 +1,18 @@
 (ns cleric.common
   (require [qbits.ash :as ash]
+           [clojure.tools.logging :as log]
            [clojure.java.io :as io]))
 
 (defn plugin [pattern action]
   (fn [bot] 
     (ash/listen bot :on-message
-                (fn [event] (when-let [matches (->> event
-                                                    :content
-                                                    (re-find pattern)
-                                                    rest )]
-                              (ash/reply bot event (apply action matches)))))))
+                (fn [event] 
+                  (when-let [match (re-find pattern (:content event))]
+                    ;regex api is awkward, is there a better way?
+                    (let [params (if (vector? match) (rest match) [])] 
+                      (log/info str "calling " action)
+                      (log/info str "with args " params)
+                      (ash/reply bot event (apply action (vec params)))))))))
 
 (defn load-properties [file-name]
   (with-open [^java.io.Reader reader (io/reader file-name)]
