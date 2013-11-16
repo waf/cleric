@@ -3,8 +3,7 @@
            [clojure.tools.logging :as log]
            [clojure.java.io :as io]))
 
-(defn plugin [pattern action]
-  (fn [bot] 
+(defn plugin [bot pattern action]
     (ash/listen bot :on-message
                 (fn [event] 
                   (when-let [match (re-find pattern (:content event))]
@@ -12,7 +11,7 @@
                     (let [params (if (vector? match) (rest match) [])] 
                       (log/info str "calling " action)
                       (log/info str "with args " params)
-                      (ash/reply bot event (apply action (vec params)))))))))
+                      (ash/reply bot event (apply action (vec params))))))))
 
 (defn load-properties [file-name]
   (with-open [^java.io.Reader reader (io/reader file-name)]

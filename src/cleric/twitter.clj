@@ -27,23 +27,33 @@
   (first (get-tweets-for-user username 1)))
 
 (defn get-random-tweet [username]
-  (rand-nth (@store/tweets username)))
+  (rand-nth ((store/get-val "tweets") username)))
 
 ; add the twitter user (source) to our sources store
 ; if mode is random, download the user's tweets into our tweets store
 (defn register [command mode source]
   (do
     (if (= "random" mode) 
-      (store/add-tweets source (get-tweets-for-user source 200)))
-    (store/add-source command mode source)
+      (store/put-val 
+        "tweets" 
+        (assoc-in (store/get-val "tweets")
+                  [source]
+                  (get-tweets-for-user source 200))))
+    (store/put-val 
+      "commands"
+      (assoc-in (store/get-val "commands")
+                [command]
+                [mode source]))
     (str "new command registered: +" command)))
 
 (defn deregister [command]
-  (store/remove-source command)
+  (store/put-val
+    "commands"
+    (disj (store/get-val "commands") command))
   (str "deleted command +" command))
 
 (defn run [command]
-  (when-let [handler (@store/sources command)]
+  (when-let [handler ((store/get-val "commands") command)]
     (let [mode (first handler)
           source (second handler)]
       (case mode
@@ -52,10 +62,12 @@
 
 (defn list-registered []
   (let [command-format (fn [cmd] (str "+" (first cmd) ":" (second (second cmd))))
-        commands (seq @store/sources)]
+        commands (seq (store/get-val "commands"))]
   (join " " (map command-format commands))))
 
-(def register-plugin (plugin #"!register (\w+) (\w+) (\w+)" register))
-(def deregister-plugin (plugin #"!deregister (.+)" deregister))
-(def list-plugin (plugin #"!list" list-registered))
-(def run-plugin (plugin #"\+(\w+)" run))
+(defn twitter-plugin [bot]
+  (-> bot
+      (plugin #"!register (\w+) (\w+) (\w+)" register)
+      (plugin #"!deregister (.+)" deregister)
+      (plugin #"!list" list-registered)
+      (plugin #"\+(\w+)" run)))

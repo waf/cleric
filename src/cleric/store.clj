@@ -2,27 +2,23 @@
   (require [clojure.data.json :as json]
            [clojure.java.io :as io]))
 
-(defonce sources (atom {}))
-(defonce tweets (atom {}))
-
-(defn add-source [command mode source]
-  (swap! sources assoc command [mode source]))
-
-(defn remove-source [command]
-  (swap! sources dissoc command))
-
-(defn add-tweets [source lst]
-  (swap! tweets assoc source lst))
+(defonce store (atom {}))
+(defonce filename "store/data")
 
 (defn persist []
-  (let [save-store (fn [store file]
-                     (spit file (json/write-str store)))]
-    (save-store @sources "store/sources")
-    (save-store @tweets "store/tweets")))
+  (spit filename (json/write-str @store)))
 
 (defn hydrate []
-  (let [load-store (fn [store file] 
-                     (if (.exists (io/as-file file))
-                       (swap! store merge (json/read-str (slurp file)))))]
-    (load-store sources "store/sources")
-    (load-store tweets "store/tweets")))
+  (if (.exists (io/as-file filename))
+    (swap! store merge (json/read-str (slurp filename)))))
+
+(defn get-val [skey]
+  (@store skey))
+
+(defn put-val [skey sval]
+  (swap! store assoc skey sval)
+  (persist))
+
+(defn rm-val [skey]
+  (swap! store dissoc skey)
+  (persist))
