@@ -8,4 +8,4 @@
                  [org.clojure/tools.logging "0.2.6"]
                  [org.slf4j/slf4j-log4j12 "1.7.5"]
                  [cc.qbits/ash "0.2.7"]
-                 [twitter-api "0.7.4"]])
+                 [twitter-api "0.7.5"]])
