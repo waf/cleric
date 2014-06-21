@@ -7,5 +7,7 @@
   :dependencies [[org.clojure/clojure "1.4.0"]
                  [org.clojure/tools.logging "0.2.6"]
                  [org.slf4j/slf4j-log4j12 "1.7.5"]
+                 [http-kit "2.1.16"]
+                 [org.clojure/data.json "0.2.5"]
                  [cc.qbits/ash "0.2.7"]
                  [twitter-api "0.7.5"]])
