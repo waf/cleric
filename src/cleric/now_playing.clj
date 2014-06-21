@@ -14,21 +14,33 @@
     "&api_key=" (:api-key props)))
 
 (defn track-format [track]
-  (str (:name track)
-       " by "
-       (get-in track [:artist :#text])))
+  (let [title (:name track)
+        artist (get-in track [:artist :#text])]
+    (if (get-in track [(keyword "@attr") :nowplaying])
+      (str "Currently playing " title " by " artist)
+      (str "Nothing playing. Last played " title " by " artist 
+           " on " (get-in track [:date :#text])))))
+
+; last.fm returns either a vector if there are multiple 
+; songs, or a single element if there is only one song. 
+(defn unwrap-vector [element]
+  (if (vector? element) 
+    (first element)
+    element))
 
 (defn users-most-recent-track [username]
   (let [api-url (get-recent-track-url username)
         response @(http/get api-url)
         {:keys [status headers body error]} response]
-    (if error
+    (if error ; handle http errors
       (str "Error: " error)
-      (let [tracks (-> body
-                       (json/read-str :key-fn keyword)
-                       :recenttracks
-                       :track)]
-        (track-format (if (seq? tracks) (first tracks) tracks))))))
+      (let [api-response (json/read-str body :key-fn keyword)]
+        (if (:error api-response) ; handle api errors
+          (str "Error: " (:message api-response))
+          (track-format (-> api-response
+                            :recenttracks
+                            :track
+                            unwrap-vector)))))))
 
 (defn now-playing-plugin [bot]
   (-> bot
