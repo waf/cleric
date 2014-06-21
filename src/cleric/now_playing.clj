@@ -13,8 +13,7 @@
     "&user=" username
     "&api_key=" (:api-key props)))
 
-(defn track-format [{{track :track} :recenttracks}]
-  (print track)
+(defn track-format [track]
   (str (:name track)
        " by "
        (get-in track [:artist :#text])))
@@ -25,7 +24,11 @@
         {:keys [status headers body error]} response]
     (if error
       (str "Error: " error)
-      (track-format (json/read-str body :key-fn keyword)))))
+      (let [tracks (-> body
+                       (json/read-str :key-fn keyword)
+                       :recenttracks
+                       :track)]
+        (track-format (if (seq? tracks) (first tracks) tracks))))))
 
 (defn now-playing-plugin [bot]
   (-> bot
