@@ -4,6 +4,7 @@
            [cleric.common :refer [load-properties]]
            [cleric.woop :as woop]
            [cleric.spotify :as spotify]
+           [cleric.now-playing :as now-playing]
            [cleric.twitter :as twitter]))
 
 (def config (load-properties "resources/cleric.properties"))
@@ -14,5 +15,6 @@
   (-> (apply ash/make-bot (mapcat seq config))
       woop/woop-plugin
       spotify/spotify-plugin
+      now-playing/now-playing-plugin
       twitter/twitter-plugin))
 
