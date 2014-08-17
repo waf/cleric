@@ -5,20 +5,25 @@
 (defonce store (atom {}))
 (defonce filename "store/data")
 
-(defn persist []
+(defn- persist []
   (spit filename (json/write-str @store)))
 
-(defn hydrate []
-  (if (.exists (io/as-file filename))
+(defn- hydrate-if-needed []
+  (if (and (empty? @store) 
+           (.exists (io/as-file filename)))
     (swap! store merge (json/read-str (slurp filename)))))
 
+(defn- sync-to-disk [op]
+  (hydrate-if-needed)
+  (op)
+  (persist))
+
 (defn get-val [skey]
+  (hydrate-if-needed)
   (@store skey))
 
 (defn put-val [skey sval]
-  (swap! store assoc skey sval)
-  (persist))
+  (sync-to-disk #(swap! store assoc skey sval)))
 
 (defn rm-val [skey]
-  (swap! store dissoc skey)
-  (persist))
+  (sync-to-disk #(swap! store dissoc skey)))

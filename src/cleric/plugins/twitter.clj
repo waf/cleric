@@ -1,12 +1,11 @@
-(ns cleric.twitter
-  (require [cleric.common :refer :all]
-           [clojure.string :refer [join]]
+(ns cleric.plugins.twitter
+  (require [clojure.string :refer [join]]
            [cleric.store :as store]
-           [clojure.tools.logging :as log]
+           [cleric.config :as cfg]
            [twitter.api.restful :as api]
            [twitter.oauth :as oauth]))
 
-(def props (load-properties "resources/twitter.properties"))
+(def props (cfg/load-properties "resources/twitter.properties"))
 
 (def creds (oauth/make-oauth-creds (:app-consumer-key props)
                                    (:app-consumer-secret props)
@@ -31,7 +30,9 @@
 
 ; add the twitter user (source) to our sources store
 ; if mode is random, download the user's tweets into our tweets store
-(defn register [command mode source]
+(defn register 
+  {:match #"^!register (\w+) (\w+) (\w+)$"}
+  [command mode source]
   (do
     (if (= "random" mode) 
       (store/put-val 
@@ -46,13 +47,17 @@
                 [mode source]))
     (str "new command registered: +" command)))
 
-(defn deregister [command]
+(defn deregister 
+  {:match #"!deregister (.+)"}
+  [command]
   (store/put-val
     "commands"
-    (disj (store/get-val "commands") command))
+    (dissoc (store/get-val "commands") command))
   (str "deleted command +" command))
 
-(defn run [command]
+(defn run 
+  {:match #"^\+(\w+)$"}
+  [command]
   (when-let [handler ((store/get-val "commands") command)]
     (let [mode (first handler)
           source (second handler)]
@@ -60,14 +65,9 @@
         "latest" (get-latest-tweet source)
         "random" (get-random-tweet source)))))
 
-(defn list-registered []
+(defn list-registered
+  {:match #"!list"}
+  []
   (let [command-format (fn [cmd] (str "+" (first cmd) ":" (second (second cmd))))
         commands (seq (store/get-val "commands"))]
   (join " " (map command-format commands))))
-
-(defn twitter-plugin [bot]
-  (-> bot
-      (plugin #"!register (\w+) (\w+) (\w+)" register)
-      (plugin #"!deregister (.+)" deregister)
-      (plugin #"!list" list-registered)
-      (plugin #"\+(\w+)" run)))

@@ -1,9 +1,9 @@
-(ns cleric.now-playing
-  (:require [cleric.common :refer :all]
-            [org.httpkit.client :as http]
+(ns cleric.plugins.lastfm
+  (:require [clj-http.client :as http]
+            [cleric.config :as cfg]
             [clojure.data.json :as json]))
 
-(def props (load-properties "resources/lastfm.properties"))
+(def props (cfg/load-properties "resources/lastfm.properties"))
 
 (defn get-recent-track-url [username]
   (str 
@@ -28,20 +28,17 @@
     (first element)
     element))
 
-(defn users-most-recent-track [username]
+(defn lastfm
+  "Fetches the user's currently playing song from last.fm"
+  {:match #"!playing (?<id>[0-9a-zA-Z]+)"}
+  [username]
   (let [api-url (get-recent-track-url username)
-        response @(http/get api-url)
+        response (http/get api-url)
         {:keys [status headers body error]} response]
-    (if error ; handle http errors
-      (str "Error: " error)
-      (let [api-response (json/read-str body :key-fn keyword)]
-        (if (:error api-response) ; handle api errors
-          (str "Error: " (:message api-response))
-          (track-format (-> api-response
-                            :recenttracks
-                            :track
-                            unwrap-vector)))))))
-
-(defn now-playing-plugin [bot]
-  (-> bot
-      (plugin #"!playing (?<id>[0-9a-zA-Z]+)" #(users-most-recent-track %))))
+    (let [api-response (json/read-str body :key-fn keyword)]
+      (if (:error api-response) ; handle api errors
+        (throw (Exception. (:message api-response)))
+        (track-format (-> api-response
+                        :recenttracks
+                        :track
+                        unwrap-vector))))))
