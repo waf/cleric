@@ -4,9 +4,9 @@
             [cleric.responses :as r]
             [cleric.config :as config]
             [cleric.plugins :as plugins]
-            [cleric.connection :as connection]))
+            [cleric.connection :as conn]))
 
-(defn get-responses [msg]
+(defn- get-responses [msg]
   "Send the message to the response system. If the response system throws
   an error, return that error as the response"
   (try
@@ -15,20 +15,27 @@
       (.printStackTrace e)
       [(irc/privmsg msg (str "Error: " (.getMessage e)))])))
 
-(defn run-bot 
-  "makes an irc connection and replies to incoming messages.
+(defn- send-responses [channel responses]
+  "Eagerly put all the responses into the channel"
+  (doall 
+    (map (partial >!! channel) responses)))
+
+(defn- get-channels [host port]
+  (conn/create-socket-channels host port 
+                               irc/parse-message 
+                               irc/serialize-message))
+
+(defn- run-bot 
+  "Makes an irc connection and replies to incoming messages.
   this function blocks until the irc connection terminates"
   [{:keys [host port nick username realname channels]}]
-  (let [incoming (chan 10) 
-        outgoing (chan 10)
-        say #(doall (map (partial >!! outgoing) %))
-        preamble (flatten [(irc/nick nick)
+
+  (plugins/load-from-disk "src/cleric/plugins")
+  (let [preamble (flatten [(irc/nick nick)
                            (irc/user username realname)
-                           (map irc/join channels)])]
-    (plugins/load-from-disk "src/cleric/plugins")
-    (connection/sync-channels-to-socket host port 
-                                        incoming irc/parse-message 
-                                        outgoing irc/serialize-message)
+                           (map irc/join channels)])
+        [incoming outgoing] (get-channels host port) 
+        say (partial send-responses outgoing)]
     (say preamble)
     (loop []
       ; read msgs off the channel until the channel closes

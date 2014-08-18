@@ -1,5 +1,7 @@
 (ns cleric.connection
-  (:require [clojure.core.async :refer [<!! >!! close! go <! >! chan go-loop pub sub]]
+  "Provides bidirectional TCP socket communication via core.async channels"
+  (:require [clojure.core.async :refer [go go-loop <! >! close! chan]]
+            [clojure.tools.logging :refer [spyf]]
             [clojure.java.io :as io])
   (:import java.net.Socket))
 
@@ -7,38 +9,53 @@
   (let [socket (Socket. host port)]
     {:socket socket
      :in (io/reader socket)
-     :out (io/writer socket)}))
+     :out (io/writer socket)
+     :command (chan)}))
 
-(defn- socket->channel [socket channel deserializer]
+(defn- destroy-connection [conn incoming outgoing]
+  (.close (:in conn))
+  (.close (:out conn))
+  (close! (:command conn))
+  (close! incoming)
+  (close! outgoing))
+
+(defn- socket->channel [socket channel deserializer command]
   "Any data received from the socket is written to the core.async channel, after
   being deserialized with the provided function."
-  (go
-    (loop [lines (line-seq socket)]
-      (when (seq lines)
-        (let [line (first lines)]
-          (println "received: " line)
-          (>! channel (deserializer (first lines))))
-        (recur (rest lines))))
-    (println "socket connection interrupted")
-    (close! channel)))
+  (go (loop [lines (line-seq socket)]
+        (when (seq lines)
+          (->> lines
+            (first)
+            (spyf "recv: %s")
+            (deserializer)
+            (>! channel))
+          (recur (rest lines))))
+      (>! command :connection-close)))
 
-(defn- channel->socket [channel socket serializer]
+(defn- channel->socket [channel socket serializer command]
   "Any messages received on the core.async channel are written to the socket, after
   being serialized with the provided function."
-  (go-loop []
-           (let [msg-to-send (<! channel)
-                 serialized (serializer msg-to-send)]
-             (println "sending: " serialized)
-             (doto socket
-               (.write serialized)
-               (.newLine)
-               (.flush))
-             (recur))))
+  (go (loop []
+        (when-let [msg-to-send (<! channel)]
+          (doto socket
+            (.write (spyf "send: %s" 
+                          (serializer msg-to-send)))
+            (.newLine)
+            (.flush))
+          (recur)))))
+
+(defn- monitor-for-cleanup [conn incoming outgoing]
+  (go 
+    (case (<! (:command conn))
+      :connection-close (destroy-connection conn incoming outgoing))))
 
 ; TODO: seems like a great use case for transducers
-(defn sync-channels-to-socket [host port incoming deserializer outgoing serializer]
-  "runs both the socket->channel and channel->socket async goroutines to 
-  provide bidirectional TCP socket communication via core.async channels."
-  (let [conn (create-connection host port)]
-    (socket->channel (:in conn) incoming deserializer)
-    (channel->socket outgoing (:out conn) serializer)))
+(defn create-socket-channels [host port deserializer serializer]
+  "Entry point for the module. Kicks off both the socket->channel and channel->socket async goroutines."
+  (let [conn (create-connection host port)
+        incoming (chan 10)
+        outgoing (chan 10)]
+    (socket->channel (:in conn) incoming deserializer (:command conn))
+    (channel->socket outgoing (:out conn) serializer (:command conn))
+    (monitor-for-cleanup conn incoming outgoing)
+    {:incoming incoming :outgoing outgoing}))
