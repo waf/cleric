@@ -1,32 +1,33 @@
 (ns cleric.connection
   (:require [clojure.core.async :refer [<!! >!! close! go <! >! chan go-loop pub sub]]
-            [cleric.irc :as irc]
             [clojure.java.io :as io])
-  (:import java.net.Socket
-           javax.net.ssl.SSLSocketFactory
-           java.io.IOException))
+  (:import java.net.Socket))
 
-(defn create-connection [host port]
+(defn- create-connection [host port]
   (let [socket (Socket. host port)]
     {:socket socket
      :in (io/reader socket)
      :out (io/writer socket)}))
 
-(defn socket->channel [socket channel]
+(defn- socket->channel [socket channel deserializer]
+  "Any data received from the socket is written to the core.async channel, after
+  being deserialized with the provided function."
   (go
     (loop [lines (line-seq socket)]
-           (when (seq lines)
-             (let [line (first lines)]
-               (println "received: " line)
-               (>! channel (irc/parse-message (first lines))))
-             (recur (rest lines))))
+      (when (seq lines)
+        (let [line (first lines)]
+          (println "received: " line)
+          (>! channel (deserializer (first lines))))
+        (recur (rest lines))))
     (println "socket connection interrupted")
     (close! channel)))
 
-(defn channel->socket [channel socket]
+(defn- channel->socket [channel socket serializer]
+  "Any messages received on the core.async channel are written to the socket, after
+  being serialized with the provided function."
   (go-loop []
            (let [msg-to-send (<! channel)
-                 serialized (irc/serialize-message msg-to-send)]
+                 serialized (serializer msg-to-send)]
              (println "sending: " serialized)
              (doto socket
                (.write serialized)
@@ -34,9 +35,10 @@
                (.flush))
              (recur))))
 
-(defn sync-channels-to-socket [host port incoming outgoing]
+; TODO: seems like a great use case for transducers
+(defn sync-channels-to-socket [host port incoming deserializer outgoing serializer]
+  "runs both the socket->channel and channel->socket async goroutines to 
+  provide bidirectional TCP socket communication via core.async channels."
   (let [conn (create-connection host port)]
-    ; async goroutine that reads tcp messages from a socket and writes them to a channel
-    (socket->channel (:in conn) incoming)
-    ; async goroutine that reads messages from a channel and writes them to a socket
-    (channel->socket outgoing (:out conn))))
+    (socket->channel (:in conn) incoming deserializer)
+    (channel->socket outgoing (:out conn) serializer)))

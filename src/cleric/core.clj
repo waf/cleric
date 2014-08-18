@@ -7,8 +7,8 @@
             [cleric.connection :as connection]))
 
 (defn get-responses [msg]
-  ; don't let plugin exceptions take down the bot, just respond
-  ; with the exception
+  "Send the message to the response system. If the response system throws
+  an error, return that error as the response"
   (try
     (doall (r/response msg)) ; fully eval the responses for our try/catch
     (catch Exception e 
@@ -26,7 +26,9 @@
                            (irc/user username realname)
                            (map irc/join channels)])]
     (plugins/load-from-disk "src/cleric/plugins")
-    (connection/sync-channels-to-socket host port incoming outgoing)
+    (connection/sync-channels-to-socket host port 
+                                        incoming irc/parse-message 
+                                        outgoing irc/serialize-message)
     (say preamble)
     (loop []
       ; read msgs off the channel until the channel closes
