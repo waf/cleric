@@ -58,4 +58,4 @@
     (socket->channel (:in conn) incoming deserializer (:command conn))
     (channel->socket outgoing (:out conn) serializer (:command conn))
     (monitor-for-cleanup conn incoming outgoing)
-    {:incoming incoming :outgoing outgoing}))
+    [incoming outgoing]))
