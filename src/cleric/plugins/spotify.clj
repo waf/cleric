@@ -2,12 +2,13 @@
   (:require [clj-http.client :as http]
             [clojure.data.json :as json]))
 
-(defn track-format [track]
+(defn- track-format [track]
   (str (:name track)
        " by "
        (get-in track [:artists 0 :name])))
 
-(defn track-lookup 
+(defn spotify-link
+  "Detect a spotify web link, and print track/artist information"
   {:match #"http://open.spotify.com/track/(?<id>[0-9a-zA-Z]+)"}
   [id]
   (let [api-url (str "https://api.spotify.com/v1/tracks/" id)

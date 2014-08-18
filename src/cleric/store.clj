@@ -1,4 +1,5 @@
 (ns cleric.store
+  "map datastore that's persisted as JSON on disk"
   (require [clojure.data.json :as json]
            [clojure.java.io :as io]))
 

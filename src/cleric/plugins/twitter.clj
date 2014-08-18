@@ -12,7 +12,7 @@
                                    (:user-access-token props)
                                    (:user-access-token-secret props)))
 
-(defn get-tweets-for-user [user n]
+(defn- get-tweets-for-user [user n]
   (let [request {:screen-name user
                  :count n
                  :trim-user "true"
@@ -22,15 +22,16 @@
                                              :params request)]
     (map :text (:body response))))
 
-(defn get-latest-tweet [username]
+(defn- get-latest-tweet [username]
   (first (get-tweets-for-user username 1)))
 
-(defn get-random-tweet [username]
+(defn- get-random-tweet [username]
   (rand-nth ((store/get-val "tweets") username)))
 
 ; add the twitter user (source) to our sources store
 ; if mode is random, download the user's tweets into our tweets store
 (defn register 
+  "Add a twitter command. e.g. !register <cmd> [latest|random] <account>"
   {:match #"^!register (\w+) (\w+) (\w+)$"}
   [command mode source]
   (do
@@ -48,6 +49,7 @@
     (str "new command registered: +" command)))
 
 (defn deregister 
+  "Remove a twitter command"
   {:match #"!deregister (.+)"}
   [command]
   (store/put-val
@@ -56,6 +58,7 @@
   (str "deleted command +" command))
 
 (defn run 
+  "Run a twitter command"
   {:match #"^\+(\w+)$"}
   [command]
   (when-let [handler ((store/get-val "commands") command)]
@@ -66,6 +69,7 @@
         "random" (get-random-tweet source)))))
 
 (defn list-registered
+  "Lists all registered twitter commands"
   {:match #"!list"}
   []
   (let [command-format (fn [cmd] (str "+" (first cmd) ":" (second (second cmd))))
