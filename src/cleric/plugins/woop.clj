@@ -2,9 +2,9 @@
   (require [clojure.string :refer (join)]))
 
 (defn- woop [n]
-  (let [integer (float (int n))
+  (let [integer (int n)
         bounded (->> integer (max 1) (min 20))
-        fraction (-> n (- integer) (* 4) (Math/round))]
+        fraction (-> n (- integer) (* 4.0) (Math/round))]
     (str 
       (join " " (repeat bounded "WOOP"))
       " "
