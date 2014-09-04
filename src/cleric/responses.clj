@@ -15,7 +15,7 @@
   :privmsg [{[target] :params 
              text :trailing
              :as request}]
-  (if (not= target "clerical") ;don't response to PMs
+  (if (not= target "cleric") ;don't response to PMs
     (let [responses (plugins/run text)
           create-privmsg (partial irc/privmsg request)]
       (map create-privmsg responses))))
