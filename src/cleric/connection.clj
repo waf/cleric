@@ -3,7 +3,8 @@
   (:require [clojure.core.async :refer [go go-loop <! >! close! chan]]
             [clojure.tools.logging :refer [spyf]]
             [clojure.java.io :as io])
-  (:import java.net.Socket))
+  (:import java.net.Socket
+           java.io.IOException))
 
 (defn- create-connection [host port]
   (let [socket (Socket. host port)]
@@ -22,7 +23,7 @@
 (defn- socket->channel [socket channel deserializer command]
   "Any data received from the socket is written to the core.async channel, after
   being deserialized with the provided function."
-  (go (loop [lines (line-seq socket)]
+  (go (loop [lines (try (line-seq socket) (catch IOException _ nil))]
         (when (seq lines)
           (->> lines
             (first)
