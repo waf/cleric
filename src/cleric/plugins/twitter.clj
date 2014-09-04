@@ -30,7 +30,7 @@
 
 ; add the twitter user (source) to our sources store
 ; if mode is random, download the user's tweets into our tweets store
-(defn register 
+(defn register-command
   "Add a twitter command. e.g. !register <cmd> [latest|random] <account>"
   {:match #"^!register (\w+) (\w+) (\w+)$"}
   [command mode source]
@@ -48,7 +48,7 @@
                 [mode source]))
     (str "new command registered: +" command)))
 
-(defn deregister 
+(defn deregister-command
   "Remove a twitter command"
   {:match #"!deregister (.+)"}
   [command]
@@ -57,7 +57,7 @@
     (dissoc (store/get-val "commands") command))
   (str "deleted command +" command))
 
-(defn run 
+(defn run-command
   "Run a twitter command"
   {:match #"^\+(\w+)$"}
   [command]
@@ -68,7 +68,7 @@
         "latest" (get-latest-tweet source)
         "random" (get-random-tweet source)))))
 
-(defn list-registered
+(defn list-commands
   "Lists all registered twitter commands"
   {:match #"!list"}
   []
