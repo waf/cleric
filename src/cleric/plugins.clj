@@ -23,11 +23,9 @@
   "Populate our `commands` atom with our command regex/function pairs"
   (reset! commands (scan-for-plugins plugin-dir)))
 
-; given a map of regex->command and an input string
-; returns a map from command->[input matches]
 (defn run [input]
-  "Given an input string, see if it matches any of the regexs.
-  If it does, run the corresponding function on the input"
+  "Given an input string, see if it matches any of the regex keys in our
+  commands map. If it does, run the corresponding command-fn on the input"
   (flatten ;flatten because multiple plugins can return multiple responses
     (for [[regex command] @commands
           :let [matches (flatten (re-seq regex input))]
