@@ -2,8 +2,8 @@
   (:require [clojure.tools.namespace :as nstools]
             [clojure.java.io :as io]))
 
-; holds our map of regex to plugin-fn
-(def plugins (atom {}))
+; holds our map of regex to command-fn
+(def commands (atom {}))
 
 (defn scan-for-plugins [plugins-dir]
   "Find clojure functions in `plugins-dir` that have a :match metadata regex,
@@ -20,16 +20,17 @@
             [(re-pattern pattern) public]))))
 
 (defn load-from-disk [plugin-dir]
-  "Populate our `plugins` atom with our plugin regex/function pairs"
-  (reset! plugins (scan-for-plugins plugin-dir)))
+  "Populate our `commands` atom with our command regex/function pairs"
+  (reset! commands (scan-for-plugins plugin-dir)))
 
-; given a map of regex->plugin and an input string
-; returns a map from plugin->[input matches]
+; given a map of regex->command and an input string
+; returns a map from command->[input matches]
 (defn run [input]
   "Given an input string, see if it matches any of the regexs.
   If it does, run the corresponding function on the input"
-  (for [[regex plugin-fn] @plugins
-        :let [matches (flatten (re-seq regex input))]
-        :when (not (empty? matches))] 
-    ; TODO: validate arity of plugin-fn, give friendly error
-    (apply plugin-fn (rest matches))))
+  (flatten ;flatten because multiple plugins can return multiple responses
+    (for [[regex command] @commands
+          :let [matches (flatten (re-seq regex input))]
+          :when (not (empty? matches))] 
+      ; TODO: validate arity of plugin-fn, give friendly error
+      (apply command (rest matches)))))
