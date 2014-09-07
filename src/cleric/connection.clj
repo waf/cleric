@@ -1,6 +1,6 @@
 (ns cleric.connection
   "Provides bidirectional TCP socket communication via core.async channels"
-  (:require [clojure.core.async :refer [go go-loop <! >! close! chan]]
+  (:require [clojure.core.async :refer [go go-loop <! >! close! chan timeout]]
             [clojure.tools.logging :refer [spyf]]
             [clojure.java.io :as io])
   (:import java.net.Socket
@@ -43,6 +43,7 @@
                           (serializer msg-to-send)))
             (.newLine)
             (.flush))
+          (<! (timeout 200)) ; pause for 200ms so we don't flood the server
           (recur)))))
 
 (defn- monitor-for-cleanup [conn incoming outgoing]
