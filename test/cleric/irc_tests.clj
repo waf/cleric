@@ -1,6 +1,6 @@
 (ns cleric.irc_tests
   (:require [clojure.test :refer :all]
-            [cleric.irc :refer :all]))
+            [cleric.irc.protocol :refer :all]))
 
 (def privmsg-line
   ":nick!~username@domain.example.com PRIVMSG #channel :message content")

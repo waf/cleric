@@ -1,4 +1,4 @@
-(ns cleric.color)
+(ns cleric.irc.color)
 
 (def colorcode {:white "00"
                 :black "01"

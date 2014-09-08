@@ -1,6 +1,6 @@
 (ns cleric.plugins.woop
   (require [clojure.string :refer (join blank?)]
-           [cleric.color :refer (color)]))
+           [cleric.irc.color :refer (color)]))
 
 (defn- woop [n]
   (let [integer (int n)
@@ -8,8 +8,8 @@
         fraction (-> n (- integer) (* 4.0) (Math/round))
         woops (conj (vec (repeat bounded "WOOP"))
                     (.substring "WOOP" 0 fraction))]
-    (str (color :fg :red :bg :blue)
-         (join (color) woops))))
+    (str (color :fg :red)
+         (join " " woops))))
 
 (defn woop-10
   "WOOPs 10 times"

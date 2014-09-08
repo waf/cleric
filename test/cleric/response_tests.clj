@@ -3,8 +3,6 @@
             [cleric.plugins :as plugins]
             [cleric.responses :refer :all]))
 
-
-
 (deftest 
   test-pong
   (is (= [:pong]

@@ -2,7 +2,7 @@
   "IRC response system. To make the bot respond to a 
   specific IRC command, implement the corresponding multimethod"
   (:require [clojure.string :refer [split-lines blank?]]
-            [cleric.irc :as irc] 
+            [cleric.irc.protocol :as irc] 
             [cleric.plugins :as plugins]))
 
 (defmulti response :command)

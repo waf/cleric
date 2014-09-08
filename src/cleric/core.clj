@@ -1,6 +1,6 @@
 (ns cleric.core
   (:require [clojure.core.async :refer [<!! >!! chan]]
-            [cleric.irc :as irc]
+            [cleric.irc.protocol :as irc]
             [cleric.responses :as r]
             [cleric.config :as config]
             [cleric.plugins :as plugins]

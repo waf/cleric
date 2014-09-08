@@ -1,4 +1,4 @@
-(ns cleric.irc
+(ns cleric.irc.protocol
   (:require [clojure.string :as string]))
 
 (def command->keyword
