@@ -1,14 +1,13 @@
 (ns cleric.plugins.woop
-  (require [clojure.string :refer (join)]))
+  (require [clojure.string :refer (join blank?)]))
 
 (defn- woop [n]
   (let [integer (int n)
-        bounded (->> integer (max 1) (min 20))
-        fraction (-> n (- integer) (* 4.0) (Math/round))]
-    (str 
-      (join " " (repeat bounded "WOOP"))
-      " "
-      (.substring "WOOP" 0 fraction))))
+        bounded (->> integer (max 0) (min 20))
+        fraction (-> n (- integer) (* 4.0) (Math/round))
+        woops (conj (vec (repeat bounded "WOOP"))
+                    (.substring "WOOP" 0 fraction))]
+    (join " " woops)))
 
 (defn woop-10
   "WOOPs 10 times"
