@@ -8,7 +8,7 @@
 (defn scan-for-plugins [plugins-dir]
   "Find clojure functions in `plugins-dir` that have a :match metadata regex,
   and create a map of that regex to the function"
-  (let [get-publics-in-ns #(do (require %) (ns-publics %))
+  (let [get-publics-in-ns #(do (require % :reload) (ns-publics %))
         get-publics-in-dir #(->> %
                               (io/file) 
                               (nstools/find-namespaces-in-dir)
