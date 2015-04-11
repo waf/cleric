@@ -1,9 +1,10 @@
 (ns cleric.plugins.twitter
-  (require [clojure.string :refer [join]]
-           [cleric.store :as store]
-           [cleric.config :as cfg]
-           [twitter.api.restful :as api]
-           [twitter.oauth :as oauth]))
+  (:require 
+    [clojure.string :refer [join]]
+    [cleric.store :as store]
+    [cleric.config :as cfg]
+    [twitter.api.restful :as api]
+    [twitter.oauth :as oauth]))
 
 (def props (cfg/load-properties "resources/twitter.properties"))
 
@@ -28,6 +29,13 @@
 (defn- get-random-tweet [username]
   (rand-nth ((store/get-val "tweets") username)))
 
+(defn- refresh-tweet-store [source]
+  (store/put-val 
+    "tweets" 
+    (assoc-in (store/get-val "tweets")
+              [source]
+              (get-tweets-for-user source 200))))
+
 ; add the twitter user (source) to our sources store
 ; if mode is random, download the user's tweets into our tweets store
 (defn register-command
@@ -35,12 +43,7 @@
   {:match #"^!register (\w+) (\w+) (\w+)$"}
   [command mode source]
   (do
-    (if (= "random" mode) 
-      (store/put-val 
-        "tweets" 
-        (assoc-in (store/get-val "tweets")
-                  [source]
-                  (get-tweets-for-user source 200))))
+    (if (= "random" mode) (refresh-tweet-store source))
     (store/put-val 
       "commands"
       (assoc-in (store/get-val "commands")
@@ -66,7 +69,9 @@
           source (second handler)]
       (case mode
         "latest" (get-latest-tweet source)
-        "random" (get-random-tweet source)))))
+        "random" (do
+                    (if (< (rand) 0.2) (future (refresh-tweet-store source)))
+                    (get-random-tweet source))))))
 
 (defn list-commands
   "Lists all registered twitter commands"
